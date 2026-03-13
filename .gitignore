@@ -1,0 +1,13 @@
+# This will ignore node_modules in both client and server
+node_modules/
+
+# This ignores your database password in the server folder
+server/.env
+.env
+
+# This ignores the build files
+client/dist/
+dist/
+
+# System files
+.DS_Store
