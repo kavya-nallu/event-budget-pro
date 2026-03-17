@@ -1,68 +1,101 @@
+/* ================= ROOT THEME ================= */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* 🎨 THEME COLORS */
+  --primary: #2563EB;
+  --primary-light: #3B82F6;
+  --bg: #EFF6FF;
+  --card: #FFFFFF;
+  --text: #0F172A;
+  --subtext: #475569;
+  --border: #E5E7EB;
 
-  font-synthesis: none;
+  color: var(--text);
+  background-color: var(--bg);
+
+  font-synthesis: none; /* ✅ FIXED TYPO */
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* ================= RESET ================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
+/* ================= BODY ================= */
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* ================= HEADINGS ================= */
+h1, h2, h3 {
+  color: var(--text);
 }
 
+/* ================= LINKS ================= */
+a {
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--primary-light);
+}
+
+/* ================= BUTTON ================= */
 button {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: none;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: all 0.25s ease;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
+/* 🔥 HOVER EFFECT */
+button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* ================= INPUT ================= */
+input {
+  font-family: inherit;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 10px;
+  outline: none;
+  transition: 0.2s;
+}
+
+input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* ================= CARD HELPER ================= */
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 2em;
   }
 }
