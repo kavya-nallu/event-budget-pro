@@ -54,14 +54,23 @@ app.use(cors());
 app.use(express.json());
 
 // ====== MongoDB Connection ======
-if (!process.env.MONGO_URI) {
+const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
+if (!mongoUri) {
   console.error("❌ MONGO_URI not set in environment variables!");
   process.exit(1);
 }
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(mongoUri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.log("❌ Connection Error:", err));
+
+// ====== Temporary Ping Route ======
+app.get('/ping', (req, res) => {
+  res.send('Backend is alive!');
+});
 
 // ====== Auth Routes ======
 app.post('/api/users/login', async (req, res) => {
