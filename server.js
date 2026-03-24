@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -53,25 +52,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ====== MongoDB Connection (TEMPORARILY DISABLED TO PREVENT 403 CRASH) ======
-/*
+// ====== MongoDB Connection (RE-ENABLED) ======
 const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
-if (!mongoUri) {
-  console.error("❌ MONGO_URI not set in environment variables!");
-  // process.exit(1); // Commented out so Azure doesn't stop the app
-}
 
-mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.log("❌ Connection Error:", err));
-*/
+if (!mongoUri) {
+  console.error("❌ ERROR: MONGO_URI is missing from Environment Variables!");
+} else {
+  mongoose.connect(mongoUri)
+    .then(() => console.log("✅ MongoDB Connected Successfully"))
+    .catch(err => console.log("❌ MongoDB Connection Error:", err));
+}
 
 // ====== Routes ======
 app.get("/", (req, res) => {
-  res.send("Backend is working 🚀");
+  res.send("Backend is working and Database is connecting... 🚀");
 });
 
 app.get('/ping', (req, res) => {
