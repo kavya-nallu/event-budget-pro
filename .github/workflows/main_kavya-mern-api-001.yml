@@ -22,12 +22,13 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: ./server   # 👈 IMPORTANT FIX
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: ./server   # 👈 deploy only backend
 
   deploy:
     runs-on: ubuntu-latest
