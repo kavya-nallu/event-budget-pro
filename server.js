@@ -4,15 +4,47 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 
-// ====== User Model ======
+// ====== Debug ENV ======
+const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
+console.log("Mongo URI:", mongoUri ? "Loaded ✅" : "Missing ❌");
+
+// ====== FORCE DEBUG MONGODB CONNECTION ======
+async function connectDB() {
+  if (!mongoUri) {
+    console.error("❌ ERROR: MONGO_URI is missing!");
+    process.exit(1);
+  }
+
+  try {
+    console.log("⏳ Connecting to MongoDB...");
+
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000 // fail fast
+    });
+
+    console.log("✅ MongoDB Connected Successfully");
+  } catch (err) {
+    console.error("❌ MongoDB CONNECTION FAILED:");
+    console.error("👉 Message:", err.message);
+    console.error("👉 Full Error:", err);
+  }
+}
+
+connectDB();
+
+// Runtime error listener
+mongoose.connection.on("error", err => {
+  console.log("❌ MongoDB runtime error:", err.message);
+});
+
+// ====== Models ======
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, required: true } 
+  role: { type: String, required: true }
 });
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 
-// ====== Event Model ======
 const EventSchema = new mongoose.Schema({
   eventName: { type: String, required: true },
   totalBudget: { type: Number, required: true },
@@ -40,7 +72,7 @@ const EventSchema = new mongoose.Schema({
             { itemName: String, itemAmount: Number }
           ]
         }
-      ] 
+      ]
     }
   ],
   createdAt: { type: Date, default: Date.now }
@@ -52,35 +84,27 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ====== MongoDB Connection (RE-ENABLED) ======
-const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
-
-if (!mongoUri) {
-  console.error("❌ ERROR: MONGO_URI is missing from Environment Variables!");
-} else {
-  mongoose.connect(mongoUri)
-    .then(() => console.log("✅ MongoDB Connected Successfully"))
-    .catch(err => console.log("❌ MongoDB Connection Error:", err));
-}
-
-// ====== Routes ======
+// ====== Health Routes ======
 app.get("/", (req, res) => {
-  res.send("Backend is working and Database is connecting... 🚀");
+  res.send("Backend is running 🚀");
 });
 
-app.get('/ping', (req, res) => {
-  res.send('Backend is alive!');
+app.get("/ping", (req, res) => {
+  res.send("Backend is alive!");
 });
 
 // ====== Auth Routes ======
 app.post('/api/users/login', async (req, res) => {
-  const { username, password, role } = req.body;
   try {
+    const { username, password, role } = req.body;
+
     const user = await User.findOne({ username, role });
-    if (!user) return res.status(401).send("Invalid credentials!");
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).send("Invalid credentials!");
-    res.status(200).json(user);
+    if (!user) return res.status(401).send("Invalid credentials");
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).send("Invalid credentials");
+
+    res.json(user);
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -89,9 +113,11 @@ app.post('/api/users/login', async (req, res) => {
 app.post('/api/users/register', async (req, res) => {
   try {
     const { username, password, role } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, password: hashedPassword, role });
-    await newUser.save();
+
+    const hash = await bcrypt.hash(password, 10);
+    const user = new User({ username, password: hash, role });
+
+    await user.save();
     res.status(201).send("User created");
   } catch (err) {
     res.status(400).send(err.message);
@@ -110,9 +136,9 @@ app.get('/api/events/all', async (req, res) => {
 
 app.post('/api/events/add', async (req, res) => {
   try {
-    const newEvent = new Event(req.body);
-    await newEvent.save();
-    res.status(201).json(newEvent);
+    const event = new Event(req.body);
+    await event.save();
+    res.status(201).json(event);
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -121,11 +147,17 @@ app.post('/api/events/add', async (req, res) => {
 app.put('/api/events/update-expenses/:eventId', async (req, res) => {
   try {
     const { categoryId, expenses } = req.body;
+
     const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).send("Event not found");
+
     const category = event.categories.id(categoryId);
-    category.expenses = expenses; 
+    if (!category) return res.status(404).send("Category not found");
+
+    category.expenses = expenses;
     await event.save();
-    res.status(200).send("Updated!");
+
+    res.send("Updated");
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -133,12 +165,15 @@ app.put('/api/events/update-expenses/:eventId', async (req, res) => {
 
 app.put('/api/events/update-event/:id', async (req, res) => {
   try {
-    const updatedEvent = await Event.findByIdAndUpdate(
+    const updated = await Event.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
       { new: true }
     );
-    res.status(200).json(updatedEvent);
+
+    if (!updated) return res.status(404).send("Event not found");
+
+    res.json(updated);
   } catch (err) {
     res.status(400).send(err.message);
   }

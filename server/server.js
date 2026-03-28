@@ -1,4 +1,8 @@
-// server.js
+// ====== START DEBUG ======
+console.log("🔥 APP STARTED");
+console.log("MONGO_URI:", process.env.MONGO_URI);
+// =========================
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -53,21 +57,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ====== MongoDB Connection (TEMPORARILY DISABLED TO PREVENT 403 CRASH) ======
-/*
-const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
+// ====== MongoDB Connection ======
+const mongoUri = process.env.MONGO_URI;
+
 if (!mongoUri) {
   console.error("❌ MONGO_URI not set in environment variables!");
-  // process.exit(1); // Commented out so Azure doesn't stop the app
+  process.exit(1);
 }
 
 mongoose.connect(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.log("❌ Connection Error:", err));
-*/
+.then(() => {
+  console.log("✅ MongoDB Connected");
+})
+.catch(err => {
+  console.error("❌ MongoDB FULL ERROR:", err);
+});
 
 // ====== Routes ======
 app.get("/", (req, res) => {
@@ -76,6 +83,16 @@ app.get("/", (req, res) => {
 
 app.get('/ping', (req, res) => {
   res.send('Backend is alive!');
+});
+
+// ====== TEST ROUTE ======
+app.get('/test-db', async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json({ success: true, data: users });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // ====== Auth Routes ======
