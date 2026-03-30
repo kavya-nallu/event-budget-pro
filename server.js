@@ -1,44 +1,63 @@
-console.log("🔥 NEW DEPLOY VERSION 2");
+console.log("🔥 NEW DEPLOY VERSION 3");
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
-require('dotenv').config();
 
-// ====== Debug ENV ======
+// ❌ REMOVE dotenv in production (Azure handles env)
+// require('dotenv').config();
+
+// ====== ENV DEBUG ======
 const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL;
+
 console.log("Mongo URI:", mongoUri ? "Loaded ✅" : "Missing ❌");
 
-// ====== FORCE DEBUG MONGODB CONNECTION ======
-async function connectDB() {
-  if (!mongoUri) {
-    console.error("❌ ERROR: MONGO_URI is missing!");
-    process.exit(1);
-  }
+// ====== EXPRESS APP ======
+const app = express();
+app.use(cors());
+app.use(express.json());
 
+// ====== DB CONNECTION ======
+async function connectDB() {
   try {
+    if (!mongoUri) {
+      throw new Error("MONGO_URI is missing in Azure env");
+    }
+
     console.log("⏳ Connecting to MongoDB...");
 
     await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 10000 // fail fast
+      serverSelectionTimeoutMS: 10000
     });
 
     console.log("✅ MongoDB Connected Successfully");
+
   } catch (err) {
-    console.error("❌ MongoDB CONNECTION FAILED:");
+    console.error("❌ MongoDB CONNECTION FAILED");
     console.error("👉 Message:", err.message);
-    console.error("👉 Full Error:", err);
   }
 }
 
-connectDB();
+// ====== START SERVER ONLY AFTER DB CONNECT ======
+async function startServer() {
+  await connectDB();
 
-// Runtime error listener
+  const PORT = process.env.PORT || 8080;
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}
+
+startServer();
+
+// ====== RUNTIME ERROR LISTENER ======
 mongoose.connection.on("error", err => {
-  console.log("❌ MongoDB runtime error:", err.message);
+  console.error("❌ MongoDB runtime error:", err.message);
 });
 
-// ====== Models ======
+// ====== MODELS ======
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -53,11 +72,11 @@ const EventSchema = new mongoose.Schema({
   endDate: { type: Date, required: true },
   categories: [
     {
-      name: { type: String, required: true },
-      amount: { type: Number, required: true },
-      coordRealName: { type: String, default: "" },
-      assignedCoordinator: { type: String, required: true },
-      coordPassword: { type: String, required: true },
+      name: String,
+      amount: Number,
+      coordRealName: String,
+      assignedCoordinator: String,
+      coordPassword: String,
       expenses: [
         {
           day: Number,
@@ -80,12 +99,7 @@ const EventSchema = new mongoose.Schema({
 });
 const Event = mongoose.models.Event || mongoose.model('Event', EventSchema);
 
-// ====== App Setup ======
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// ====== Health Routes ======
+// ====== ROUTES ======
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
@@ -94,7 +108,7 @@ app.get("/ping", (req, res) => {
   res.send("Backend is alive!");
 });
 
-// ====== Auth Routes ======
+// ====== AUTH ======
 app.post('/api/users/login', async (req, res) => {
   try {
     const { username, password, role } = req.body;
@@ -125,7 +139,7 @@ app.post('/api/users/register', async (req, res) => {
   }
 });
 
-// ====== Event Routes ======
+// ====== EVENTS ======
 app.get('/api/events/all', async (req, res) => {
   try {
     const events = await Event.find().sort({ createdAt: -1 });
@@ -178,10 +192,4 @@ app.put('/api/events/update-event/:id', async (req, res) => {
   } catch (err) {
     res.status(400).send(err.message);
   }
-});
-
-// ====== Start Server ======
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
 });
